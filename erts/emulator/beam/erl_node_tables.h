@@ -68,10 +68,10 @@ void erts_deref_dist_entry(DistEntry *dep);
 #define ERST_INTERNAL_CHANNEL_NO 0
 
 enum dist_entry_state {
-    ERTS_DE_STATE_IDLE,
-    ERTS_DE_STATE_PENDING,
-    ERTS_DE_STATE_CONNECTED,
-    ERTS_DE_STATE_EXITING
+    ERTS_DE_STATE_IDLE, //空闲状态
+    ERTS_DE_STATE_PENDING, //等待状态
+    ERTS_DE_STATE_CONNECTED, //已连接
+    ERTS_DE_STATE_EXITING //退出
 };
 
 #define ERTS_DE_QFLG_BUSY			(((erts_aint32_t) 1) <<  0)
@@ -133,7 +133,7 @@ struct ErtsProcList_;
  *   Lock mutexes with lower numbers before mutexes with higher numbers and
  *   unlock mutexes with higher numbers before mutexes with higher numbers.
  */
-
+// distribution entry 分布式参与节点
 struct dist_entry_ {
     HashBucket hash_bucket;     /* Hash bucket */
     struct dist_entry_ *next;	/* Next entry in dist_table (not sorted) */

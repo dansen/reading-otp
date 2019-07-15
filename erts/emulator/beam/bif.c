@@ -1818,7 +1818,7 @@ ebif_bang_2(BIF_ALIST_2)
 #define SEND_YIELD_CONTINUE     (-8)
 #define SEND_SYSTEM_LIMIT		(-9)
 
-
+// 给远程进程发送消息
 static Sint remote_send(Process *p, DistEntry *dep,
 			Eterm to, Eterm node, Eterm full_to, Eterm msg,
                         Eterm return_term, Eterm *ctxpp,
@@ -1828,12 +1828,13 @@ static Sint remote_send(Process *p, DistEntry *dep,
     int code;
     ErtsDSigSendContext ctx;
     ASSERT(is_atom(to) || is_external_pid(to));
-
+    // 获取外部进程的状态
     code = erts_dsig_prepare(&ctx, dep, p, ERTS_PROC_LOCK_MAIN,
 			     ERTS_DSP_NO_LOCK,
 			     !suspend, 0, connect);
     ctx.return_term = return_term;
     ctx.node = node;
+
     switch (code) {
     case ERTS_DSIG_PREP_NOT_ALIVE:
     case ERTS_DSIG_PREP_NOT_CONNECTED:
@@ -1901,6 +1902,7 @@ do_send(Process *p, Eterm to, Eterm msg, Eterm return_term, Eterm *refp,
     Eterm* tp;
 
     if (is_internal_pid(to)) {
+        // 内部进程
 	if (IS_TRACED_FL(p, F_TRACE_SEND))
 	    trace_send(p, to, msg);
 	if (ERTS_PROC_GET_SAVED_CALLS_BUF(p))
@@ -1910,6 +1912,7 @@ do_send(Process *p, Eterm to, Eterm msg, Eterm return_term, Eterm *refp,
 	if (!rp)
 	    return 0;
     } else if (is_external_pid(to)) {
+        //外部进程（本机或者其他机器）
 	dep = external_pid_dist_entry(to);
 	if(dep == erts_this_dist_entry) {
 	    erts_dsprintf_buf_t *dsbufp = erts_create_logger_dsbuf();

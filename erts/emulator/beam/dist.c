@@ -2147,7 +2147,7 @@ notify_dist_data(Process *c_p, Eterm pid)
 
 int
 erts_dsig_prepare(ErtsDSigSendContext *ctx,
-		  DistEntry *dep,
+		  DistEntry *dep, //dist_entry_point
 		  Process *proc,
                   ErtsProcLocks proc_locks,
 		  ErtsDSigPrepLock dspl,
@@ -2184,6 +2184,7 @@ retry:
 	goto fail;
     }
     else if (connect) {
+        // connect参数的作用：先连接，然后再来一遍
         ASSERT(dep->state == ERTS_DE_STATE_IDLE);
         erts_de_runlock(dep);
         if (!erts_auto_connect(dep, proc, proc_locks)) {
