@@ -97,6 +97,7 @@
 #define ERTS_THR_PRGR_LFLG_BLOCK	((erts_aint32_t) (1U << 31))
 #define ERTS_THR_PRGR_LFLG_NO_LEADER	((erts_aint32_t) (1U << 30))
 #define ERTS_THR_PRGR_LFLG_WAITING_UM	((erts_aint32_t) (1U << 29))
+// active标记
 #define ERTS_THR_PRGR_LFLG_ACTIVE_MASK	(~(ERTS_THR_PRGR_LFLG_NO_LEADER	\
 					   | ERTS_THR_PRGR_LFLG_BLOCK	\
 					   | ERTS_THR_PRGR_LFLG_WAITING_UM))
@@ -257,6 +258,7 @@ typedef struct {
     } unmanaged;
 } ErtsThrPrgrInternalData;
 
+// 全局静态，thread progress数据
 static ErtsThrPrgrInternalData *intrnl;
 
 ErtsThrPrgr erts_thr_prgr__;
@@ -816,50 +818,56 @@ update(ErtsThrPrgrData *tpd)
     ErtsThrPrgrVal val;
 
     if (tpd->leader)
-	res = 1;
+		res = 1;
     else {
 	erts_aint32_t lflgs;
 	res = 0;
 	val = read_acqb(&erts_thr_prgr__.current);
 	if (tpd->confirmed == val) {
-	    val++;
-	    if (val == ERTS_THR_PRGR_VAL_WAITING)
+		val++;
+		if (val == ERTS_THR_PRGR_VAL_WAITING)
 		val = 0;
-	    tpd->confirmed = val;
-	    set_mb(&intrnl->thr[tpd->id].data.current, val);
+		tpd->confirmed = val;
+		set_mb(&intrnl->thr[tpd->id].data.current, val);
 	}
 
 	lflgs = erts_atomic32_read_nob(&intrnl->misc.data.lflgs);
+	// 是否阻塞
 	if (lflgs & ERTS_THR_PRGR_LFLG_BLOCK)
-	    res = 1; /* Need to block in leader_update() */
+		res = 1; /* Need to block in leader_update() */
 
+	//没有leader则成为leader
 	if ((lflgs & ERTS_THR_PRGR_LFLG_NO_LEADER)
-	    && (tpd->active || ERTS_THR_PRGR_LFLGS_ACTIVE(lflgs) == 0)) {
-	    /* Try to take over leadership... */
-	    erts_aint32_t olflgs;
-	    olflgs = erts_atomic32_read_band_acqb(
+		&& (tpd->active || ERTS_THR_PRGR_LFLGS_ACTIVE(lflgs) == 0)) {
+		/* Try to take over leadership... */
+		erts_aint32_t olflgs;
+		// 调整状态
+		olflgs = erts_atomic32_read_band_acqb(
 		&intrnl->misc.data.lflgs,
 		~ERTS_THR_PRGR_LFLG_NO_LEADER);
-	    if (olflgs & ERTS_THR_PRGR_LFLG_NO_LEADER) {
+
+		// 抢夺成功，则设置leader
+	if (olflgs & ERTS_THR_PRGR_LFLG_NO_LEADER) {
 		tpd->leader = 1;
 #if ERTS_THR_PRGR_PRINT_LEADER
 		erts_fprintf(stderr, "L -> %d\n", tpd->id);
 #endif
 		ERTS_THR_PROGRESS_STATE_DEBUG_SET_LEADER(tpd->id, 1);
-	    }
+	}
 	}
 	res |= tpd->leader;
-    }
+	}
     return res;
 }
 
+// 更新thread进度
 int
 erts_thr_progress_update(ErtsThrPrgrData *tpd)
 {
     return update(tpd);
 }
 
-
+// 更新leader thread进度
 int
 erts_thr_progress_leader_update(ErtsThrPrgrData *tpd)
 {
