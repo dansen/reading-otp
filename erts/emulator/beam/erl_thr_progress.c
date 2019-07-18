@@ -646,6 +646,7 @@ leader_update(ErtsThrPrgrData *tpd)
     erts_lc_check_exact(NULL, 0);
 #endif
     if (!tpd->leader) {
+	// 发现不是leader
 	/* Probably need to block... */
 	block_thread(tpd);
     }
@@ -658,13 +659,17 @@ leader_update(ErtsThrPrgrData *tpd)
 
 	my_ix = tpd->id;
 
+	// 处于waiting状态
 	if (tpd->leader_state.current == ERTS_THR_PRGR_VAL_WAITING) {
 	    /* Took over as leader from another thread */
 	    tpd->leader_state.current = read_nob(&erts_thr_prgr__.current);
+		// 设置进度值
 	    tpd->leader_state.next = tpd->leader_state.current;
 	    tpd->leader_state.next++;
+		// ERTS_THR_PRGR_VAL_WAITING是uint64最大值，当等于最大值时设置为0
 	    if (tpd->leader_state.next == ERTS_THR_PRGR_VAL_WAITING)
 		tpd->leader_state.next = 0;
+		// 
 	    tpd->leader_state.chk_next_ix = intrnl->misc.data.chk_next_ix;
 	    tpd->leader_state.umrefc_ix.waiting = intrnl->misc.data.umrefc_ix.waiting;
 	    tpd->leader_state.umrefc_ix.current =
