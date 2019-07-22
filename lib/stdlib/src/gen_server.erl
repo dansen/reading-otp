@@ -383,7 +383,7 @@ init_it(Mod, Args) ->
 %%% ---------------------------------------------------
 %%% The MAIN loop.
 %%% ---------------------------------------------------
-
+% 主循环
 loop(Parent, Name, State, Mod, {continue, Continue} = Msg, HibernateAfterTimeout, Debug) ->
     Reply = try_dispatch(Mod, handle_continue, Continue, State),
     case Debug of
@@ -442,6 +442,7 @@ decode_msg(Msg, Parent, Name, State, Mod, Time, HibernateAfterTimeout, Debug, Hi
 %%% Send/receive functions
 %%% ---------------------------------------------------
 do_send(Dest, Msg) ->
+	% 调用send，不通过receive等待结果
     try erlang:send(Dest, Msg)
     catch
         error:_ -> ok
@@ -494,8 +495,10 @@ send_nodes([Node|Tail], Name, Tag, Req, Monitors)
   when is_atom(Node) ->
     Monitor = start_monitor(Node, Name),
     %% Handle non-existing names in rec_nodes.
+	% 发送消息
     catch {Name, Node} ! {'$gen_call', {self(), {Tag, Node}}, Req},
     send_nodes(Tail, Name, Tag, Req, [Monitor | Monitors]);
+
 send_nodes([_Node|Tail], Name, Tag, Req, Monitors) ->
     %% Skip non-atom Node
     send_nodes(Tail, Name, Tag, Req, Monitors);

@@ -19,6 +19,7 @@
 %%
 -module(supervisor).
 
+%% supervisor继承gen_server
 -behaviour(gen_server).
 
 %% External exports
@@ -180,6 +181,7 @@ start_link(SupName, Mod, Args) ->
 -spec start_child(SupRef, ChildSpec) -> startchild_ret() when
       SupRef :: sup_ref(),
       ChildSpec :: child_spec() | (List :: [term()]).
+% 第一个参数是监督者
 start_child(Supervisor, ChildSpec) ->
     call(Supervisor, {start_child, ChildSpec}).
 

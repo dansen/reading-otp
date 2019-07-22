@@ -172,6 +172,7 @@ spawn_opt(M, F, A, Opts) when is_atom(M), is_atom(F), is_list(A) ->
     Parent = get_my_name(),
     Ancestors = get_ancestors(),
     check_for_monitor(Opts),
+    % spawn_opt(Module, Function, Args, Options)
     erlang:spawn_opt(?MODULE, init_p, [Parent,Ancestors,M,F,A], Opts).
 
 -spec spawn_opt(Node, Module, Function, Args, SpawnOpts) -> pid() when
@@ -225,7 +226,7 @@ ensure_link(SpawnOpts) ->
     end.
 
 -spec init_p(pid(), [pid()], function()) -> term().
-
+% start link最终调用这里
 init_p(Parent, Ancestors, Fun) when is_function(Fun) ->
     put('$ancestors', [Parent|Ancestors]),
     Mfa = erlang:fun_info_mfa(Fun),

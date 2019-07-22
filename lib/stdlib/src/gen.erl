@@ -89,14 +89,17 @@ start(GenMod, LinkP, Mod, Args, Options) ->
 %% Spawn the process (and link) maybe at another node.
 %% If spawn without link, set parent to ourselves 'self'!!!
 %%-----------------------------------------------------------------
+% 带link的spawn，设置父进程
 do_spawn(GenMod, link, Mod, Args, Options) ->
     Time = timeout(Options),
     proc_lib:start_link(?MODULE, init_it,
 			[GenMod, self(), self(), Mod, Args, Options], 
 			Time,
 			spawn_opts(Options));
+% nolink
 do_spawn(GenMod, _, Mod, Args, Options) ->
     Time = timeout(Options),
+	% 调用start
     proc_lib:start(?MODULE, init_it,
 		   [GenMod, self(), self, Mod, Args, Options], 
 		   Time,
@@ -157,6 +160,8 @@ call(Process, Label, Request, Timeout)
     Fun = fun(Pid) -> do_call(Pid, Label, Request, Timeout) end,
     do_for_proc(Process, Fun).
 
+% gen_server call调用，采用同步机制
+% 采用send消息处理
 do_call(Process, Label, Request, Timeout) when is_atom(Process) =:= false ->
     Mref = erlang:monitor(process, Process),
 
